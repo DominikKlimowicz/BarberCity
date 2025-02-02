@@ -1,0 +1,75 @@
+﻿@page "/mybookings"
+@using BarberCity.Klasy
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext _context
+@inject NavigationManager Navigation
+@inject AuthState authState
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<PageTitle>Moje Rezerwacje</PageTitle>
+
+<h3>Moje Rezerwacje</h3>
+
+@if (bookings == null)
+{
+    <p>Ładowanie rezerwacji...</p>
+}
+else if (bookings.Count == 0)
+{
+    <p>Nie masz żadnych rezerwacji.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Usługa</th>
+                <th>Data wizyty</th>
+                <th>Email</th>
+                <th>Usuń wizytę</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var booking in bookings)
+            {
+                <tr>
+                    <td>@booking.Service</td>
+                    <td>@booking.AppointmentDate.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@booking.Email</td>
+                    <td><button type="button" class="btn btn-outline-danger" @onclick="() => DeleteBooking(booking.Id)">Usuń</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Booking> bookings;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBookings();
+    }
+
+    private async Task LoadBookings()
+    {
+        bookings = await _context.Bookings
+            .Where(b => b.Email == authState.Email)
+            .ToListAsync();
+    }
+    private async Task DeleteBooking(int bookingId)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Czy na pewno chcesz usunąć tę wizytę?");
+        if (confirmed)
+        {
+            var booking = await _context.Bookings.FindAsync(bookingId);
+            if (booking != null)
+            {
+                _context.Bookings.Remove(booking);
+                await _context.SaveChangesAsync();
+                await LoadBookings(); // Odśwież listę rezerwacji
+            }
+        }
+    }
+}

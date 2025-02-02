@@ -1,0 +1,112 @@
+﻿@page "/register"
+@layout LoginLayout
+@using BarberCity.Components.Layout
+@using BarberCity.Klasy
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext _context
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Rejestracja - BarberCity</PageTitle>
+
+<EditForm Model="registrationModel" OnValidSubmit="HandleRegistration">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="container d-flex justify-content-center align-items-start mt-md-5" style="background-color: #C0C0C0; border-radius: 20px; padding-top: 100px;">
+        <div class="row justify-content-center" style="max-width: 500px; width: 100%;">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger" role="alert">
+                    @errorMessage
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(successMessage))
+            {
+                <div class="alert alert-success" role="alert">
+                    @successMessage
+                </div>
+            }
+
+            <div class="col-12 text-center">
+                <h3>Rejestracja</h3>
+            </div>
+
+            <div class="col-12 mb-3">
+                <label for="username" class="form-label">Nazwa użytkownika:</label>
+                <InputText id="username" class="form-control" @bind-Value="registrationModel.Username" />
+                <ValidationMessage For="@(() => registrationModel.Username)" />
+            </div>
+
+            <div class="col-12 mb-3">
+                <label for="email" class="form-label">Email:</label>
+                <InputText id="email" class="form-control" @bind-Value="registrationModel.Email" />
+                <ValidationMessage For="@(() => registrationModel.Email)" />
+            </div>
+
+            <div class="col-12 mb-3">
+                <label for="password" class="form-label">Hasło:</label>
+                <InputText id="password" type="password" class="form-control" @bind-Value="registrationModel.Password" />
+                <ValidationMessage For="@(() => registrationModel.Password)" />
+            </div>
+
+            <div class="col-12 mb-3">
+                <label for="confirmPassword" class="form-label">Potwierdź hasło:</label>
+                <InputText id="confirmPassword" type="password" class="form-control" @bind-Value="registrationModel.ConfirmPassword" />
+                <ValidationMessage For="@(() => registrationModel.ConfirmPassword)" />
+            </div>
+
+            <div class="col-12 text-center">
+                <button type="submit" class="btn btn-outline-success">Zarejestruj się</button>
+            </div>
+
+            <div class="col-12 text-center mt-3">
+                <p>Masz już konto? <a href="/">Zaloguj się tutaj</a></p>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+
+    private UserRegistration registrationModel = new();
+    private string errorMessage;
+    private string successMessage;
+
+    private async Task HandleRegistration()
+    {
+        if (registrationModel == null)
+        {
+            errorMessage = "Model rejestracji jest pusty";
+            successMessage = null;
+            return;
+        }
+
+        var existingUser = await _context.Users
+            .FirstOrDefaultAsync(u => u.Username == registrationModel.Username || u.Email == registrationModel.Email);
+
+        if (existingUser != null)
+        {
+            errorMessage = "Nazwa użytkownika lub adres e-mail jest już zajęty.";
+            successMessage = null;
+            return;
+        }
+
+        var newUser = new User
+            {
+                Username = registrationModel.Username,
+                Email = registrationModel.Email,
+                Password = registrationModel.Password,
+            };
+
+        await _context.Users.AddAsync(newUser);
+        await _context.SaveChangesAsync();
+
+        Navigation.NavigateTo("/");
+    }
+
+
+}
+

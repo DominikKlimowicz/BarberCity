@@ -1,0 +1,42 @@
+﻿@using BarberCity.Klasy
+@inject NavigationManager Navigation
+@inject AuthState authState
+@rendermode InteractiveServer
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">BarberCity</a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="book">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Zarezerwuj wizytę
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="mybookings">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Zarezerwowane wizyty
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="account">
+                <span class="bi-house-door-fill-nav-menu" aria-hidden="true"></span> Moje konto
+            </NavLink>
+        </div>
+        <div class="nav-item px-3">
+            <button class="btn btn-outline-danger" @onclick="Logout">Wyloguj się</button>
+        </div>
+    </nav>
+</div>
+@code {
+    private async Task Logout()
+    {
+        authState.IsAuthenticated = false;
+        Navigation.NavigateTo("/", forceLoad: true);
+    }
+}

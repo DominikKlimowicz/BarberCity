@@ -1,0 +1,85 @@
+﻿@page "/book"
+@using Microsoft.AspNetCore.Components.Forms
+@inject NavigationManager Navigation
+@inject ApplicationDbContext _context
+@inject AuthState authState
+@using BarberCity.Klasy
+@rendermode InteractiveServer
+
+<PageTitle>Rezerwacja wizyty</PageTitle>
+
+@if (isSubmitted)
+{
+    <div class="container d-flex justify-content-center align-items-center vh-100">
+        <div class="card p-4 text-center" style="max-width: 400px; width: 100%;">
+            <h3>Dziękujemy za rezerwację, @booking.Name!</h3>
+            <button class="btn btn-primary mt-3" @onclick="ResetForm">Zarezerwuj kolejną wizytę</button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="container d-flex justify-content-center align-items-start mt-md-5"
+         style="background-color: #C0C0C0; border-radius: 20px; padding: 30px; min-width: 400px; width: min-content; max-width: 90%;">
+        <div class="row justify-content-center" style="max-width: 300px; width: auto;">
+            <div class="col-12 text-center">
+                <h3>Rezerwacja wizyty</h3>
+                <div>Witaj @booking.Name! Zarezerwuj wizytę u barbera</div>
+            </div>
+
+            <EditForm Model="booking" OnValidSubmit="SubmitForm">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="col-12 mb-3">
+                    <label for="appointmentDate" class="form-label">Data wizyty:</label>
+                    <InputDate id="appointmentDate" class="form-control" @bind-Value="booking.AppointmentDate" />
+                    <ValidationMessage For="@(() => booking.AppointmentDate)" />
+                </div>
+
+                <div class="col-12 mb-3">
+                    <label for="service" class="form-label">Usługa:</label>
+                    <InputSelect id="service" class="form-select" @bind-Value="booking.Service">
+                        <option disabled selected>Wybierz usługę</option>
+                        <option value="Strzyżenie">Strzyżenie</option>
+                        <option value="Golenie">Golenie</option>
+                        <option value="Pielęgnacja brody">Pielęgnacja brody</option>
+                        <option value="Farbowanie + zmiana wizerunku">Farbowanie + zmiana wizerunku</option>
+                    </InputSelect>
+                    <ValidationMessage For="@(() => booking.Service)" />
+                </div>
+
+                <div class="col-12 text-center">
+                    <button type="submit" class="btn btn-success">Zarezerwuj wizytę</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    private Booking booking = new();
+    private bool isSubmitted = false;
+
+    protected override void OnInitialized()
+    {
+        if(authState.IsAuthenticated){
+            booking.Name = authState.Username;
+            booking.Email = authState.Email;
+        }
+    }
+    private async Task SubmitForm()
+    {
+        isSubmitted = true;
+        await _context.Bookings.AddAsync(booking);
+        await _context.SaveChangesAsync();
+    }
+
+    private void ResetForm()
+    {
+        booking = new();
+        booking.Name = authState.Username;
+        booking.Email = authState.Email;
+        isSubmitted = false;
+    }
+}

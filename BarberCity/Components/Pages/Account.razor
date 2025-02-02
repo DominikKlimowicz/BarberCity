@@ -1,0 +1,93 @@
+﻿@page "/account"
+@inject NavigationManager Navigation
+@inject ApplicationDbContext _context
+@inject AuthState authState
+@inject IJSRuntime JS
+@using Microsoft.EntityFrameworkCore
+@using BarberCity.Klasy
+@rendermode InteractiveServer
+
+<PageTitle>Moje konto</PageTitle>
+
+<h3>Informacje o koncie</h3>
+
+@if (user != null)
+{
+    <div class="card" style="max-width: 500px; margin: 0 auto;">
+        <div class="card-body">
+            <h5 class="card-title">Dane użytkownika</h5>
+
+            @if (!isEditing)
+            {
+                <p><strong>Email:</strong> @user.Email</p>
+                <p><strong>Nazwa użytkownika:</strong> @user.Username</p>
+                <button class="btn btn-warning" @onclick="StartEditing">Edytuj dane</button>
+                <button class="btn btn-danger" @onclick="DeleteAccount">Usuń konto</button>
+            }
+            else
+            {
+                <EditForm Model="user" OnValidSubmit="SaveChanges">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nazwa użytkownika</label>
+                        <InputText id="name" class="form-control" @bind-Value="user.Username" />
+                        <ValidationMessage For="@(() => user.Username)" />
+                    </div>
+
+                    <button type="submit" class="btn btn-success">Zapisz zmiany</button>
+                    <button type="button" class="btn btn-secondary" @onclick="CancelEditing">Anuluj</button>
+                </EditForm>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <p>Nie znaleziono danych użytkownika.</p>
+}
+@code {
+    private User user;
+    private bool isEditing = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var email = authState.Email;
+
+        user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+    }
+
+    private void StartEditing()
+    {
+        isEditing = true;
+    }
+
+    private void CancelEditing()
+    {
+        isEditing = false;
+    }
+
+    private async Task SaveChanges()
+    {
+        _context.Users.Update(user);
+        await _context.SaveChangesAsync();
+        isEditing = false;
+    }
+    private async Task DeleteAccount()
+    {
+        if (user != null)
+        {
+            bool confirmDelete = await JS.InvokeAsync<bool>("confirm", "Czy na pewno chcesz usunąć swoje konto?");
+
+            if (confirmDelete)
+            {
+                _context.Users.Remove(user);
+                await _context.SaveChangesAsync();
+                authState.IsAuthenticated = false;
+                Navigation.NavigateTo("/");
+            }
+        }
+    }
+
+}

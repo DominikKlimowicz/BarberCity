@@ -1,0 +1,98 @@
+﻿@page "/"
+@layout LoginLayout
+@inject NavigationManager Navigation
+@inject ApplicationDbContext _context
+@inject AuthState authState
+@using BarberCity.Components.Layout
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Forms
+@using BarberCity.Klasy
+@rendermode InteractiveServer
+
+<PageTitle>BarberCity</PageTitle>
+
+<EditForm Model="userLogin" OnValidSubmit="HandleLogin">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="container d-flex justify-content-center align-items-start mt-md-5" style="background-color: #C0C0C0; border-radius: 20px; padding-top: 100px;">
+        <div class="row justify-content-center" style="max-width: 500px; width: 100%;">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger" role="alert">
+                    @errorMessage
+                </div>
+            }
+            <div class="col-12 text-center">
+                <h3>Logowanie</h3>
+            </div>
+
+            <div class="col-12 mb-3">
+                <label for="username" class="form-label">Username:</label>
+                <InputText id="username" class="form-control" @bind-Value="userLogin.Username" />
+                <ValidationMessage For="@(() => userLogin.Username)" />
+            </div>
+
+            <div class="col-12 mb-3">
+                <label for="password" class="form-label">Password:</label>
+                <InputText id="password" type="password" class="form-control" @bind-Value="userLogin.Password" />
+                <ValidationMessage For="@(() => userLogin.Password)" />
+            </div>
+
+            <div class="col-12 text-center">
+                <button type="button" class="btn btn-outline-success"@onclick="HandleLogin">Zaloguj się</button>
+            </div>
+
+            <div class="col-12 text-center mt-3">
+                <p>Nie masz konta? <a href="/register">Zarejestruj się tutaj</a></p>
+            </div>
+        </div>
+    </div>
+
+</EditForm>
+
+@code {
+    private UserLogin userLogin = new();
+    private string errorMessage;
+
+    private async Task HandleLogin()
+    {
+        var validUser = await ValidateUser(userLogin.Username, userLogin.Password);
+
+        if (validUser)
+        {
+            var user = await _context.Users
+                                     .FirstOrDefaultAsync(u => u.Username == userLogin.Username);
+
+            if (user != null)
+            {
+                authState.Username = userLogin.Username;
+                authState.Email = user.Email;
+                authState.IsAuthenticated = true;
+
+                // Przekierowanie do strony rezerwacji
+                Navigation.NavigateTo("/book");
+            }
+            else
+            {
+                // Obsługuje przypadek, gdy użytkownik istnieje, ale nie można go znaleźć
+                errorMessage = "Użytkownik nie znaleziony.";
+            }
+        }
+        else
+        {
+            // Jeśli login lub hasło są błędne, wyświetl błąd
+            errorMessage = "Niepoprawny login lub hasło!";
+        }
+    }
+
+    private async Task<bool> ValidateUser(string username, string password)
+    {
+        // To jest miejsce, gdzie w rzeczywistej aplikacji będziesz sprawdzać dane w bazie
+        // Zastąp to zapytaniem do bazy danych lub usługą autentykacji
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.Username == username && u.Password == password);
+
+        return user != null;
+    }
+}
