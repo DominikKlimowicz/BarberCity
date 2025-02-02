@@ -28,13 +28,13 @@
             </div>
 
             <div class="col-12 mb-3">
-                <label for="username" class="form-label">Username:</label>
+                <label for="username" class="form-label">Nazwa użytkownika:</label>
                 <InputText id="username" class="form-control" @bind-Value="userLogin.Username" />
                 <ValidationMessage For="@(() => userLogin.Username)" />
             </div>
 
             <div class="col-12 mb-3">
-                <label for="password" class="form-label">Password:</label>
+                <label for="password" class="form-label">Hasło:</label>
                 <InputText id="password" type="password" class="form-control" @bind-Value="userLogin.Password" />
                 <ValidationMessage For="@(() => userLogin.Password)" />
             </div>
